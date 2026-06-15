@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Register - GEMSTORE</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="brand">GEM<span>STORE</span></a>
+  <div id="nav-auth"></div>
+</nav>
+
+<div class="center-wrap">
+  <div class="card auth-card">
+    <h2>Create your account</h2>
+    <p class="subtitle">Sign up to start topping up MLBB diamonds.</p>
+
+    <div id="message" class="alert"></div>
+
+    <form id="register-form">
+      <div class="form-group">
+        <label for="username">Username</label>
+        <input type="text" id="username" name="username" required autocomplete="username" />
+      </div>
+
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" required autocomplete="email" />
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" required minlength="6" autocomplete="new-password" />
+        </div>
+        <div class="form-group">
+          <label for="confirm_password">Confirm Password</label>
+          <input type="password" id="confirm_password" name="confirm_password" required minlength="6" autocomplete="new-password" />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="phone" class="optional-label">Phone</label>
+        <input type="tel" id="phone" name="phone" autocomplete="tel" />
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="mlbb_user_id" class="optional-label">MLBB User ID</label>
+          <input type="text" id="mlbb_user_id" name="mlbb_user_id" />
+        </div>
+        <div class="form-group">
+          <label for="mlbb_server_id" class="optional-label">MLBB Server ID</label>
+          <input type="text" id="mlbb_server_id" name="mlbb_server_id" />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="referral_code" class="optional-label">Referral Code</label>
+        <input type="text" id="referral_code" name="referral_code" />
+      </div>
+
+      <button type="submit" class="btn">Create Account</button>
+    </form>
+
+    <p class="footer-link">
+      Already have an account? <a href="login.html">Log in</a>
+    </p>
+  </div>
+</div>
+
+<script src="js/auth.js"></script>
+<script>
+  document.getElementById("register-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const messageEl = document.getElementById("message");
+    messageEl.style.display = "none";
+
+    const password = form.password.value;
+    const confirmPassword = form.confirm_password.value;
+
+    if (password !== confirmPassword) {
+      showMessage(messageEl, "Passwords do not match", "error");
+      return;
+    }
+
+    if (password.length < 6) {
+      showMessage(messageEl, "Password must be at least 6 characters", "error");
+      return;
+    }
+
+    const submitBtn = form.querySelector("button[type=submit]");
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Creating account...";
+
+    try {
+      await apiRequest("/auth/register", {
+        method: "POST",
+        body: JSON.stringify({
+          username: form.username.value.trim(),
+          email: form.email.value.trim(),
+          password,
+          phone: form.phone.value.trim(),
+          mlbb_user_id: form.mlbb_user_id.value.trim(),
+          mlbb_server_id: form.mlbb_server_id.value.trim(),
+          referral_code: form.referral_code.value.trim(),
+        }),
+      });
+      window.location.href = "dashboard.html";
+    } catch (err) {
+      showMessage(messageEl, err.message, "error");
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Create Account";
+    }
+  });
+</script>
+</body>
+</html>

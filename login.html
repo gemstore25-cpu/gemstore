@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Login - GEMSTORE</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="brand">GEM<span>STORE</span></a>
+  <div id="nav-auth"></div>
+</nav>
+
+<div class="center-wrap">
+  <div class="card auth-card">
+    <h2>Welcome back</h2>
+    <p class="subtitle">Log in to manage your orders and wallet.</p>
+
+    <div id="message" class="alert"></div>
+
+    <form id="login-form">
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" required autocomplete="email" />
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" required autocomplete="current-password" />
+      </div>
+
+      <button type="submit" class="btn">Log In</button>
+    </form>
+
+    <p class="footer-link">
+      Don't have an account? <a href="register.html">Create one</a>
+    </p>
+  </div>
+</div>
+
+<script src="js/auth.js"></script>
+<script>
+  document.getElementById("login-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const messageEl = document.getElementById("message");
+    messageEl.style.display = "none";
+
+    const submitBtn = form.querySelector("button[type=submit]");
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Logging in...";
+
+    try {
+      await apiRequest("/auth/login", {
+        method: "POST",
+        body: JSON.stringify({
+          email: form.email.value.trim(),
+          password: form.password.value,
+        }),
+      });
+      window.location.href = "dashboard.html";
+    } catch (err) {
+      showMessage(messageEl, err.message, "error");
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Log In";
+    }
+  });
+</script>
+</body>
+</html>

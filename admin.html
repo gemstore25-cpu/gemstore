@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>GemStore Admin Panel</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #0d0f1a;
+    --surface: #13162a;
+    --surface2: #1a1e35;
+    --border: #252a45;
+    --accent: #6c47ff;
+    --accent2: #ff6b35;
+    --gold: #f0b429;
+    --text: #e8eaf2;
+    --muted: #7a80a0;
+    --success: #22c55e;
+    --danger: #ef4444;
+    --warning: #f59e0b;
+    --radius: 12px;
+    --sidebar: 240px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; }
+
+  /* SIDEBAR */
+  .sidebar {
+    width: var(--sidebar); min-height: 100vh; background: var(--surface);
+    border-right: 1px solid var(--border); display: flex; flex-direction: column;
+    position: fixed; top: 0; left: 0; z-index: 100; transition: transform .3s;
+  }
+  .sidebar-logo {
+    padding: 20px 18px 16px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .logo-gem {
+    width: 36px; height: 36px; background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 8px; display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+  .logo-text { font-family: 'Space Grotesk', sans-serif; font-size: 18px; font-weight: 700;
+    background: linear-gradient(135deg, #a78bfa, #fb923c); -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent; }
+  .logo-badge { font-size: 10px; color: var(--muted); margin-top: 2px; }
+  .nav { flex: 1; padding: 12px 10px; overflow-y: auto; }
+  .nav-section { font-size: 10px; color: var(--muted); letter-spacing: .1em; text-transform: uppercase;
+    padding: 14px 8px 6px; font-weight: 600; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 8px;
+    cursor: pointer; font-size: 13.5px; color: var(--muted); transition: all .18s; margin-bottom: 2px;
+    user-select: none; text-decoration: none;
+  }
+  .nav-item:hover { background: var(--surface2); color: var(--text); }
+  .nav-item.active { background: linear-gradient(135deg, rgba(108,71,255,.25), rgba(255,107,53,.12));
+    color: var(--text); border: 1px solid rgba(108,71,255,.35); }
+  .nav-item .icon { width: 18px; text-align: center; font-size: 15px; }
+  .nav-badge { margin-left: auto; background: var(--accent); color: #fff; font-size: 10px;
+    font-weight: 700; padding: 2px 6px; border-radius: 999px; }
+  .sidebar-footer { padding: 14px; border-top: 1px solid var(--border); font-size: 12px; color: var(--muted); }
+
+  /* MAIN */
+  .main { margin-left: var(--sidebar); flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+  .topbar {
+    position: sticky; top: 0; z-index: 50; background: rgba(13,15,26,.85); backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border); padding: 0 28px; height: 60px;
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  }
+  .topbar-left { display: flex; align-items: center; gap: 12px; }
+  .page-title { font-family: 'Space Grotesk', sans-serif; font-size: 17px; font-weight: 600; }
+  .breadcrumb { font-size: 12px; color: var(--muted); }
+  .topbar-right { display: flex; align-items: center; gap: 12px; }
+  .topbar-btn {
+    width: 36px; height: 36px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--surface); display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-size: 15px; color: var(--muted); transition: all .15s; position: relative;
+  }
+  .topbar-btn:hover { background: var(--surface2); color: var(--text); }
+  .notif-dot { position: absolute; top: 7px; right: 7px; width: 7px; height: 7px;
+    background: var(--accent2); border-radius: 50%; border: 2px solid var(--bg); }
+  .admin-avatar {
+    width: 36px; height: 36px; border-radius: 8px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    display: flex; align-items: center; justify-content: center; font-size: 14px;
+    font-weight: 700; cursor: pointer;
+  }
+
+  /* CONTENT */
+  .content { padding: 28px; flex: 1; }
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* STATS */
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+  .stat-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 20px; position: relative; overflow: hidden;
+  }
+  .stat-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: var(--accent-line, linear-gradient(90deg, var(--accent), var(--accent2)));
+  }
+  .stat-label { font-size: 12px; color: var(--muted); font-weight: 500; margin-bottom: 8px; }
+  .stat-value { font-family: 'Space Grotesk', sans-serif; font-size: 26px; font-weight: 700; }
+  .stat-change { font-size: 12px; margin-top: 6px; display: flex; align-items: center; gap: 4px; }
+  .stat-change.up { color: var(--success); }
+  .stat-change.down { color: var(--danger); }
+  .stat-icon { position: absolute; right: 18px; top: 50%; transform: translateY(-50%);
+    font-size: 32px; opacity: .12; }
+
+  /* SECTION HEADER */
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .section-title { font-family: 'Space Grotesk', sans-serif; font-size: 15px; font-weight: 600; }
+  .section-actions { display: flex; gap: 8px; align-items: center; }
+
+  /* BUTTONS */
+  .btn {
+    padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600;
+    cursor: pointer; border: none; transition: all .18s; display: inline-flex; align-items: center; gap: 6px;
+  }
+  .btn-primary { background: linear-gradient(135deg, var(--accent), #8b5cf6); color: #fff; }
+  .btn-primary:hover { opacity: .88; transform: translateY(-1px); }
+  .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+  .btn-secondary:hover { background: var(--border); }
+  .btn-danger { background: rgba(239,68,68,.15); color: var(--danger); border: 1px solid rgba(239,68,68,.3); }
+  .btn-danger:hover { background: rgba(239,68,68,.25); }
+  .btn-success { background: rgba(34,197,94,.15); color: var(--success); border: 1px solid rgba(34,197,94,.3); }
+  .btn-sm { padding: 5px 10px; font-size: 12px; }
+
+  /* TABLE */
+  .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  table { width: 100%; border-collapse: collapse; }
+  thead th { padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 600;
+    color: var(--muted); text-transform: uppercase; letter-spacing: .06em;
+    background: var(--surface2); border-bottom: 1px solid var(--border); }
+  tbody td { padding: 13px 16px; font-size: 13.5px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover td { background: rgba(255,255,255,.025); }
+
+  /* BADGES */
+  .badge { padding: 3px 9px; border-radius: 99px; font-size: 11px; font-weight: 600; }
+  .badge-active { background: rgba(34,197,94,.15); color: var(--success); }
+  .badge-inactive { background: rgba(239,68,68,.15); color: var(--danger); }
+  .badge-pending { background: rgba(245,158,11,.15); color: var(--warning); }
+  .badge-diamonds { background: rgba(108,71,255,.15); color: #a78bfa; }
+  .badge-pass { background: rgba(240,180,41,.15); color: var(--gold); }
+
+  /* FORM */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-group.full { grid-column: 1/-1; }
+  label { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+  input, select, textarea {
+    background: var(--surface2); border: 1px solid var(--border); border-radius: 8px;
+    padding: 9px 12px; color: var(--text); font-size: 13.5px; font-family: 'Inter', sans-serif;
+    transition: border-color .15s; outline: none;
+  }
+  input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+  select option { background: var(--surface2); }
+  textarea { resize: vertical; min-height: 80px; }
+
+  /* CARD */
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px; }
+  .card + .card { margin-top: 16px; }
+
+  /* PRODUCT CARDS */
+  .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
+  .product-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 18px; position: relative; transition: all .2s; cursor: pointer;
+  }
+  .product-card:hover { border-color: var(--accent); transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(108,71,255,.15); }
+  .product-card.inactive { opacity: .5; }
+  .product-icon { font-size: 28px; margin-bottom: 10px; }
+  .product-name { font-weight: 600; font-size: 13.5px; margin-bottom: 4px; }
+  .product-diamonds { font-size: 12px; color: #a78bfa; margin-bottom: 8px; }
+  .product-price { font-family: 'Space Grotesk', sans-serif; font-size: 17px; font-weight: 700; color: var(--gold); }
+  .product-reseller { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .product-actions { display: flex; gap: 6px; margin-top: 12px; }
+  .product-badge { position: absolute; top: 12px; right: 12px; }
+
+  /* MODAL */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,.7); backdrop-filter: blur(4px);
+    z-index: 200; display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none; transition: opacity .2s;
+  }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+  .modal {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+    padding: 28px; width: 560px; max-width: 95vw; max-height: 90vh; overflow-y: auto;
+    transform: translateY(20px); transition: transform .2s;
+  }
+  .modal-overlay.open .modal { transform: translateY(0); }
+  .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 22px; }
+  .modal-title { font-family: 'Space Grotesk', sans-serif; font-size: 17px; font-weight: 700; }
+  .modal-close { width: 32px; height: 32px; border-radius: 6px; border: 1px solid var(--border);
+    background: none; color: var(--muted); cursor: pointer; font-size: 16px;
+    display: flex; align-items: center; justify-content: center; }
+  .modal-close:hover { background: var(--surface2); color: var(--text); }
+  .modal-footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 22px; padding-top: 18px;
+    border-top: 1px solid var(--border); }
+
+  /* TEMPLATE HEADER */
+  .template-header {
+    background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+    border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 24px 28px; margin-bottom: 20px; display: flex; align-items: center; gap: 16px;
+    position: relative; overflow: hidden;
+  }
+  .template-header::before {
+    content: ''; position: absolute; top: -40px; right: -40px;
+    width: 180px; height: 180px; background: rgba(108,71,255,.18);
+    border-radius: 50%; filter: blur(40px);
+  }
+  .template-logo { font-size: 40px; }
+  .template-info h2 { font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 700;
+    background: linear-gradient(135deg, #fff, #c4b5fd); -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent; }
+  .template-info p { color: var(--muted); font-size: 13px; margin-top: 4px; }
+  .template-meta { margin-left: auto; text-align: right; }
+  .template-meta .tm-count { font-family: 'Space Grotesk', sans-serif; font-size: 28px; font-weight: 700; color: var(--gold); }
+  .template-meta .tm-label { font-size: 12px; color: var(--muted); }
+
+  /* SEARCH */
+  .search-wrap { position: relative; }
+  .search-wrap input { padding-left: 34px; min-width: 200px; }
+  .search-wrap::before { content: '🔍'; position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 13px; }
+
+  /* FILTER ROW */
+  .filter-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .filter-chip {
+    padding: 6px 14px; border-radius: 99px; font-size: 12px; font-weight: 600;
+    cursor: pointer; border: 1px solid var(--border); background: var(--surface2);
+    color: var(--muted); transition: all .15s;
+  }
+  .filter-chip.active { background: rgba(108,71,255,.2); color: #a78bfa; border-color: rgba(108,71,255,.4); }
+  .filter-chip:hover:not(.active) { border-color: var(--accent); color: var(--text); }
+
+  /* RECENT ORDERS */
+  .order-badge-completed { background: rgba(34,197,94,.12); color: var(--success); }
+  .order-badge-pending { background: rgba(245,158,11,.12); color: var(--warning); }
+  .order-badge-failed { background: rgba(239,68,68,.12); color: var(--danger); }
+  .order-badge-processing { background: rgba(108,71,255,.12); color: #a78bfa; }
+
+  /* TOGGLE */
+  .toggle { position: relative; display: inline-block; width: 38px; height: 21px; }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .toggle-slider { position: absolute; cursor: pointer; inset: 0; background: var(--border);
+    border-radius: 21px; transition: .2s; }
+  .toggle-slider::before { content: ''; position: absolute; height: 15px; width: 15px;
+    left: 3px; bottom: 3px; background: var(--muted); border-radius: 50%; transition: .2s; }
+  .toggle input:checked + .toggle-slider { background: var(--accent); }
+  .toggle input:checked + .toggle-slider::before { transform: translateX(17px); background: #fff; }
+
+  /* FOOTER */
+  .admin-footer {
+    text-align: center; padding: 16px 28px; border-top: 1px solid var(--border);
+    font-size: 12px; color: var(--muted); background: var(--surface);
+  }
+  .admin-footer a { color: var(--accent); text-decoration: none; }
+
+  /* WHATSAPP SUPPORT */
+  .wa-fab {
+    position: fixed; bottom: 26px; right: 26px; width: 54px; height: 54px;
+    background: #25d366; border-radius: 50%; display: flex; align-items: center;
+    justify-content: center; font-size: 26px; cursor: pointer; z-index: 999;
+    box-shadow: 0 6px 24px rgba(37,211,102,.4); transition: all .2s; text-decoration: none;
+  }
+  .wa-fab:hover { transform: scale(1.1); box-shadow: 0 10px 32px rgba(37,211,102,.5); }
+  .wa-tooltip {
+    position: fixed; bottom: 90px; right: 26px; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px;
+    font-size: 12px; color: var(--text); white-space: nowrap; z-index: 999;
+    opacity: 0; pointer-events: none; transition: opacity .2s;
+    box-shadow: 0 4px 16px rgba(0,0,0,.3);
+  }
+  .wa-fab:hover + .wa-tooltip, .wa-tooltip:hover { opacity: 1; }
+
+  /* TABS */
+  .tabs { display: flex; gap: 2px; background: var(--surface2); border-radius: 10px; padding: 3px; margin-bottom: 18px; width: fit-content; }
+  .tab { padding: 7px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; color: var(--muted); transition: all .15s; }
+  .tab.active { background: var(--accent); color: #fff; }
+  .tab:hover:not(.active) { color: var(--text); }
+
+  /* RESPONSIVE */
+  @media (max-width: 900px) {
+    .sidebar { transform: translateX(-100%); }
+    .main { margin-left: 0; }
+    .stats-grid { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 600px) {
+    .stats-grid { grid-template-columns: 1fr; }
+    .form-grid { grid-template-columns: 1fr; }
+  }
+
+  /* TOAST */
+  .toast {
+    position: fixed; bottom: 90px; right: 90px; background: var(--surface2);
+    border: 1px solid var(--border); border-radius: 10px; padding: 12px 18px;
+    font-size: 13px; z-index: 9999; opacity: 0; transform: translateY(10px);
+    transition: all .3s; pointer-events: none;
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+  .toast.success { border-color: rgba(34,197,94,.5); }
+  .toast.error { border-color: rgba(239,68,68,.5); }
+
+  .divider { border: none; border-top: 1px solid var(--border); margin: 18px 0; }
+
+  .empty-state { text-align: center; padding: 48px 20px; color: var(--muted); }
+  .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+  .empty-state p { font-size: 14px; }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-gem">💎</div>
+    <div>
+      <div class="logo-text">GEMSTORE</div>
+      <div class="logo-badge">Admin Panel</div>
+    </div>
+  </div>
+  <nav class="nav">
+    <div class="nav-section">Overview</div>
+    <div class="nav-item active" onclick="navigate('dashboard',this)">
+      <span class="icon">🏠</span> Dashboard
+    </div>
+
+    <div class="nav-section">Products</div>
+    <div class="nav-item" onclick="navigate('products',this)">
+      <span class="icon">💎</span> Products
+    </div>
+    <div class="nav-item" onclick="navigate('packages',this)">
+      <span class="icon">📦</span> All Packages
+    </div>
+
+    <div class="nav-section">Orders</div>
+    <div class="nav-item" onclick="navigate('orders',this)">
+      <span class="icon">🛒</span> Orders
+      <span class="nav-badge">12</span>
+    </div>
+    <div class="nav-item" onclick="navigate('wallet',this)">
+      <span class="icon">💰</span> Wallet Requests
+      <span class="nav-badge">4</span>
+    </div>
+
+    <div class="nav-section">Users</div>
+    <div class="nav-item" onclick="navigate('users',this)">
+      <span class="icon">👥</span> All Users
+    </div>
+    <div class="nav-item" onclick="navigate('resellers',this)">
+      <span class="icon">🤝</span> Resellers
+    </div>
+
+    <div class="nav-section">Marketing</div>
+    <div class="nav-item" onclick="navigate('coupons',this)">
+      <span class="icon">🏷️</span> Coupons
+    </div>
+    <div class="nav-item" onclick="navigate('banners',this)">
+      <span class="icon">🖼️</span> Banners
+    </div>
+    <div class="nav-item" onclick="navigate('announcements',this)">
+      <span class="icon">📢</span> Announcements
+    </div>
+
+    <div class="nav-section">Support</div>
+    <div class="nav-item" onclick="navigate('tickets',this)">
+      <span class="icon">🎫</span> Support Tickets
+      <span class="nav-badge">3</span>
+    </div>
+    <div class="nav-item" onclick="navigate('faqs',this)">
+      <span class="icon">❓</span> FAQs
+    </div>
+
+    <div class="nav-section">System</div>
+    <div class="nav-item" onclick="navigate('settings',this)">
+      <span class="icon">⚙️</span> Settings
+    </div>
+    <div class="nav-item" onclick="navigate('logs',this)">
+      <span class="icon">📋</span> Activity Logs
+    </div>
+  </nav>
+  <div class="sidebar-footer">
+    Logged in as <strong>Admin</strong><br>v1.0.0 · GEMSTORE
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <div>
+        <div class="page-title" id="page-title">Dashboard</div>
+        <div class="breadcrumb" id="page-breadcrumb">Admin / Dashboard</div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div class="topbar-btn" title="Notifications">🔔<div class="notif-dot"></div></div>
+      <div class="topbar-btn" title="Refresh" onclick="showToast('Data refreshed!','success')">🔄</div>
+      <div class="admin-avatar" title="Admin">A</div>
+    </div>
+  </header>
+
+  <div class="content">
+
+    <!-- ====== DASHBOARD ====== -->
+    <div class="page active" id="page-dashboard">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">Total Revenue</div>
+          <div class="stat-value">₹1,24,560</div>
+          <div class="stat-change up">↑ 18.4% this month</div>
+          <div class="stat-icon">💰</div>
+        </div>
+        <div class="stat-card" style="--accent-line: linear-gradient(90deg, #22c55e, #16a34a)">
+          <div class="stat-label">Total Orders</div>
+          <div class="stat-value">2,847</div>
+          <div class="stat-change up">↑ 9.2% this month</div>
+          <div class="stat-icon">🛒</div>
+        </div>
+        <div class="stat-card" style="--accent-line: linear-gradient(90deg, #f0b429, #f59e0b)">
+          <div class="stat-label">Active Users</div>
+          <div class="stat-value">541</div>
+          <div class="stat-change up">↑ 24 new today</div>
+          <div class="stat-icon">👥</div>
+        </div>
+        <div class="stat-card" style="--accent-line: linear-gradient(90deg, #ff6b35, #ef4444)">
+          <div class="stat-label">Pending Tickets</div>
+          <div class="stat-value">3</div>
+          <div class="stat-change down">↑ 1 since yesterday</div>
+          <div class="stat-icon">🎫</div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div class="card">
+          <div class="section-header">
+            <div class="section-title">Recent Orders</div>
+            <button class="btn btn-secondary btn-sm" onclick="navigate('orders',null)">View All</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Order</th><th>User</th><th>Package</th><th>Amount</th><th>Status</th></tr></thead>
+              <tbody>
+                <tr><td>#ORD-001</td><td>Rahul K.</td><td>86 Diamonds</td><td>₹149</td><td><span class="badge order-badge-completed">Completed</span></td></tr>
+                <tr><td>#ORD-002</td><td>Priya M.</td><td>1412 Diamonds</td><td>₹2,399</td><td><span class="badge order-badge-pending">Pending</span></td></tr>
+                <tr><td>#ORD-003</td><td>Arjun S.</td><td>Weekly Pass</td><td>₹159</td><td><span class="badge order-badge-completed">Completed</span></td></tr>
+                <tr><td>#ORD-004</td><td>Sanya T.</td><td>514 Diamonds</td><td>₹899</td><td><span class="badge order-badge-processing">Processing</span></td></tr>
+                <tr><td>#ORD-005</td><td>Vikram D.</td><td>878 Diamonds</td><td>₹1,499</td><td><span class="badge order-badge-failed">Failed</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="section-header">
+            <div class="section-title">Wallet Requests</div>
+            <button class="btn btn-secondary btn-sm" onclick="navigate('wallet',null)">View All</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>User</th><th>Type</th><th>Amount</th><th>Status</th><th>Action</th></tr></thead>
+              <tbody>
+                <tr><td>Karan P.</td><td>Deposit</td><td>₹500</td><td><span class="badge badge-pending">Pending</span></td>
+                  <td><button class="btn btn-success btn-sm" onclick="showToast('Approved!','success')">✓</button></td></tr>
+                <tr><td>Nisha R.</td><td>Withdrawal</td><td>₹1,200</td><td><span class="badge badge-pending">Pending</span></td>
+                  <td><button class="btn btn-success btn-sm" onclick="showToast('Approved!','success')">✓</button></td></tr>
+                <tr><td>Amit G.</td><td>Deposit</td><td>₹300</td><td><span class="badge badge-active">Approved</span></td>
+                  <td><span style="color:var(--muted);font-size:12px">Done</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====== PRODUCTS (TEMPLATE VIEW) ====== -->
+    <div class="page" id="page-products">
+      <div class="template-header">
+        <div class="template-logo">🎮</div>
+        <div class="template-info">
+          <h2>MLBB GLOBAL</h2>
+          <p>Mobile Legends: Bang Bang · Official Diamond Top-Up Products</p>
+          <p style="margin-top:6px;font-size:12px;color:var(--accent)">Template: MLBB Global · Region: India · Currency: INR</p>
+        </div>
+        <div class="template-meta">
+          <div class="tm-count">12</div>
+          <div class="tm-label">Active Products</div>
+        </div>
+      </div>
+
+      <div class="section-header">
+        <div class="tabs">
+          <div class="tab active" onclick="filterProducts('all',this)">All (12)</div>
+          <div class="tab" onclick="filterProducts('diamonds',this)">💎 Diamonds</div>
+          <div class="tab" onclick="filterProducts('weekly_pass',this)">📅 Weekly Pass</div>
+          <div class="tab" onclick="filterProducts('twilight_pass',this)">🌙 Twilight Pass</div>
+        </div>
+        <div class="section-actions">
+          <div class="search-wrap"><input type="text" placeholder="Search products..." oninput="searchProducts(this.value)" /></div>
+          <button class="btn btn-primary" onclick="openProductModal()">＋ Add Product</button>
+        </div>
+      </div>
+
+      <div class="products-grid" id="products-grid">
+        <!-- Rendered by JS -->
+      </div>
+    </div>
+
+    <!-- ====== ALL PACKAGES (TABLE VIEW) ====== -->
+    <div class="page" id="page-packages">
+      <div class="section-header">
+        <div class="section-title">All Packages</div>
+        <div class="section-actions">
+          <div class="filter-row">
+            <div class="filter-chip active" onclick="toggleChip(this)">All</div>
+            <div class="filter-chip" onclick="toggleChip(this)">Active</div>
+            <div class="filter-chip" onclick="toggleChip(this)">Inactive</div>
+          </div>
+          <button class="btn btn-primary" onclick="openProductModal()">＋ Add Package</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>#</th><th>Name</th><th>Diamonds</th><th>Type</th><th>Price</th><th>Reseller Price</th><th>Status</th><th>Actions</th></tr>
+          </thead>
+          <tbody id="packages-table-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ====== ORDERS ====== -->
+    <div class="page" id="page-orders">
+      <div class="section-header">
+        <div class="section-title">All Orders</div>
+        <div class="section-actions">
+          <div class="search-wrap"><input type="text" placeholder="Search orders..." /></div>
+          <select style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px">
+            <option>All Status</option><option>Pending</option><option>Completed</option><option>Failed</option>
+          </select>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Order #</th><th>User</th><th>MLBB ID</th><th>Package</th><th>Amount</th><th>Payment</th><th>Status</th><th>Date</th><th>Action</th></tr></thead>
+          <tbody>
+            <tr><td>#ORD-001</td><td>Rahul K.</td><td>123456789 (2001)</td><td>86 Diamonds</td><td>₹149</td><td>UPI</td><td><span class="badge order-badge-completed">Completed</span></td><td>14 Jun 2026</td><td><button class="btn btn-secondary btn-sm">View</button></td></tr>
+            <tr><td>#ORD-002</td><td>Priya M.</td><td>987654321 (1001)</td><td>1412 Diamonds</td><td>₹2,399</td><td>Wallet</td><td><span class="badge order-badge-pending">Pending</span></td><td>14 Jun 2026</td><td><button class="btn btn-secondary btn-sm">View</button></td></tr>
+            <tr><td>#ORD-003</td><td>Arjun S.</td><td>456789123 (2001)</td><td>Weekly Pass</td><td>₹159</td><td>Razorpay</td><td><span class="badge order-badge-completed">Completed</span></td><td>13 Jun 2026</td><td><button class="btn btn-secondary btn-sm">View</button></td></tr>
+            <tr><td>#ORD-004</td><td>Sanya T.</td><td>321654987 (1001)</td><td>514 Diamonds</td><td>₹899</td><td>PhonePe</td><td><span class="badge order-badge-processing">Processing</span></td><td>13 Jun 2026</td><td><button class="btn btn-secondary btn-sm">View</button></td></tr>
+            <tr><td>#ORD-005</td><td>Vikram D.</td><td>654987321 (2001)</td><td>878 Diamonds</td><td>₹1,499</td><td>GPay</td><td><span class="badge order-badge-failed">Failed</span></td><td>12 Jun 2026</td><td><button class="btn btn-secondary btn-sm">View</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ====== WALLET ====== -->
+    <div class="page" id="page-wallet">
+      <div class="section-header">
+        <div class="section-title">Wallet Requests</div>
+        <div class="section-actions">
+          <div class="filter-row">
+            <div class="filter-chip active" onclick="toggleChip(this)">All</div>
+            <div class="filter-chip" onclick="toggleChip(this)">Deposits</div>
+            <div class="filter-chip" onclick="toggleChip(this)">Withdrawals</div>
+            <div class="filter-chip" onclick="toggleChip(this)">Pending</div>
+          </div>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>#</th><th>User</th><th>Type</th><th>Amount</th><th>Payment Method</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>Karan P.</td><td>Deposit</td><td>₹500</td><td>UPI</td><td><span class="badge badge-pending">Pending</span></td><td>14 Jun 2026</td>
+              <td><button class="btn btn-success btn-sm" onclick="showToast('Request approved!','success')">✓ Approve</button> <button class="btn btn-danger btn-sm" onclick="showToast('Request rejected','error')">✗</button></td></tr>
+            <tr><td>2</td><td>Nisha R.</td><td>Withdrawal</td><td>₹1,200</td><td>Bank Transfer</td><td><span class="badge badge-pending">Pending</span></td><td>13 Jun 2026</td>
+              <td><button class="btn btn-success btn-sm" onclick="showToast('Request approved!','success')">✓ Approve</button> <button class="btn btn-danger btn-sm">✗</button></td></tr>
+            <tr><td>3</td><td>Amit G.</td><td>Deposit</td><td>₹300</td><td>PhonePe</td><td><span class="badge badge-active">Approved</span></td><td>12 Jun 2026</td>
+              <td><span style="color:var(--muted);font-size:12px">Processed</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ====== USERS ====== -->
+    <div class="page" id="page-users">
+      <div class="section-header">
+        <div class="section-title">All Users</div>
+        <div class="section-actions">
+          <div class="search-wrap"><input type="text" placeholder="Search users..." /></div>
+          <select style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px">
+            <option>All Roles</option><option>Customer</option><option>Reseller</option><option>Admin</option>
+          </select>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Name</th><th>Email</th><th>Role</th><th>Wallet</th><th>Status</th><th>Joined</th><th>Actions</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>Admin</td><td>admin@gemstore.com</td><td><span class="badge" style="background:rgba(240,180,41,.15);color:var(--gold)">Admin</span></td><td>—</td><td><span class="badge badge-active">Active</span></td><td>Jun 2026</td><td><button class="btn btn-secondary btn-sm">Edit</button></td></tr>
+            <tr><td>2</td><td>Rahul Kumar</td><td>rahul@email.com</td><td><span class="badge" style="background:rgba(108,71,255,.15);color:#a78bfa">Customer</span></td><td>₹250</td><td><span class="badge badge-active">Active</span></td><td>Jun 2026</td><td><button class="btn btn-secondary btn-sm">Edit</button> <button class="btn btn-danger btn-sm">Block</button></td></tr>
+            <tr><td>3</td><td>Priya Mehta</td><td>priya@email.com</td><td><span class="badge" style="background:rgba(34,197,94,.15);color:var(--success)">Reseller</span></td><td>₹3,500</td><td><span class="badge badge-active">Active</span></td><td>May 2026</td><td><button class="btn btn-secondary btn-sm">Edit</button> <button class="btn btn-danger btn-sm">Block</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ====== RESELLERS ====== -->
+    <div class="page" id="page-resellers">
+      <div class="section-header">
+        <div class="section-title">Resellers</div>
+        <div class="section-actions">
+          <button class="btn btn-secondary" onclick="showToast('Export started','success')">📥 Export</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Name</th><th>Email</th><th>Discount</th><th>Total Orders</th><th>Commission Earned</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>Priya Mehta</td><td>priya@email.com</td><td>10%</td><td>45</td><td>₹2,340</td><td><span class="badge badge-active">Active</span></td><td><button class="btn btn-secondary btn-sm">Edit Discount</button></td></tr>
+            <tr><td>2</td><td>Suresh J.</td><td>suresh@email.com</td><td>10%</td><td>12</td><td>₹780</td><td><span class="badge badge-active">Active</span></td><td><button class="btn btn-secondary btn-sm">Edit Discount</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ====== COUPONS ====== -->
+    <div class="page" id="page-coupons">
+      <div class="section-header">
+        <div class="section-title">Coupons</div>
+        <div class="section-actions">
+          <button class="btn btn-primary" onclick="openCouponModal()">＋ Create Coupon</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Code</th><th>Type</th><th>Value</th><th>Min Order</th><th>Used / Max</th><th>Expires</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody>
+            <tr><td><strong>WELCOME10</strong></td><td>Percentage</td><td>10%</td><td>₹100</td><td>0 / 1000</td><td>Jun 2027</td><td><span class="badge badge-active">Active</span></td><td><button class="btn btn-danger btn-sm">Disable</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ====== BANNERS ====== -->
+    <div class="page" id="page-banners">
+      <div class="section-header">
+        <div class="section-title">Banners</div>
+        <div class="section-actions"><button class="btn btn-primary">＋ Add Banner</button></div>
+      </div>
+      <div class="empty-state card">
+        <div class="icon">🖼️</div>
+        <p>No banners yet. Add your first promotional banner.</p>
+        <button class="btn btn-primary" style="margin-top:14px">＋ Add Banner</button>
+      </div>
+    </div>
+
+    <!-- ====== ANNOUNCEMENTS ====== -->
+    <div class="page" id="page-announcements">
+      <div class="section-header">
+        <div class="section-title">Announcements</div>
+        <div class="section-actions"><button class="btn btn-primary">＋ New Announcement</button></div>
+      </div>
+      <div class="empty-state card">
+        <div class="icon">📢</div>
+        <p>No announcements yet.</p>
+        <button class="btn btn-primary" style="margin-top:14px">＋ Create Announcement</button>
+      </div>
+    </div>
+
+    <!-- ====== TICKETS ====== -->
+    <div class="page" id="page-tickets">
+      <div class="section-header">
+        <div class="section-title">Support Tickets</div>
+        <div class="section-actions">
+          <div class="filter-row">
+            <div class="filter-chip active" onclick="toggleChip(this)">All</div>
+            <div class="filter-chip" onclick="toggleChip(this)">Open</div>
+            <div class="filter-chip" onclick="toggleChip(this)">In Progress</div>
+            <div class="filter-chip" onclick="toggleChip(this)">Resolved</div>
+          </div>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Ticket #</th><th>User</th><th>Subject</th><th>Category</th><th>Priority</th><th>Status</th><th>Date</th><th>Action</th></tr></thead>
+          <tbody>
+            <tr><td>#TKT-001</td><td>Vikram D.</td><td>Order not delivered</td><td>Order</td><td><span class="badge" style="background:rgba(239,68,68,.12);color:var(--danger)">High</span></td><td><span class="badge order-badge-pending">Open</span></td><td>14 Jun</td><td><button class="btn btn-primary btn-sm">Reply</button></td></tr>
+            <tr><td>#TKT-002</td><td>Meena V.</td><td>Refund not received</td><td>Payment</td><td><span class="badge" style="background:rgba(245,158,11,.12);color:var(--warning)">Medium</span></td><td><span class="badge order-badge-processing">In Progress</span></td><td>13 Jun</td><td><button class="btn btn-primary btn-sm">Reply</button></td></tr>
+            <tr><td>#TKT-003</td><td>Raj S.</td><td>Unable to login</td><td>Account</td><td><span class="badge" style="background:rgba(34,197,94,.12);color:var(--success)">Low</span></td><td><span class="badge order-badge-completed">Resolved</span></td><td>12 Jun</td><td><button class="btn btn-secondary btn-sm">View</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ====== FAQS ====== -->
+    <div class="page" id="page-faqs">
+      <div class="section-header">
+        <div class="section-title">FAQs</div>
+        <div class="section-actions"><button class="btn btn-primary" onclick="openFaqModal()">＋ Add FAQ</button></div>
+      </div>
+      <div id="faq-list">
+        <div class="card" style="margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;align-items:start;gap:12px">
+            <div><strong style="font-size:14px">How long does diamond delivery take?</strong>
+              <p style="color:var(--muted);font-size:13px;margin-top:6px">Most orders are delivered within 5-15 minutes after payment confirmation.</p></div>
+            <div style="display:flex;gap:6px;flex-shrink:0">
+              <button class="btn btn-secondary btn-sm">Edit</button>
+              <button class="btn btn-danger btn-sm">Delete</button>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;align-items:start;gap:12px">
+            <div><strong style="font-size:14px">What payment methods do you accept?</strong>
+              <p style="color:var(--muted);font-size:13px;margin-top:6px">We accept UPI, PhonePe, Google Pay, Paytm, Razorpay, Cashfree, and Wallet balance.</p></div>
+            <div style="display:flex;gap:6px;flex-shrink:0">
+              <button class="btn btn-secondary btn-sm">Edit</button>
+              <button class="btn btn-danger btn-sm">Delete</button>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;align-items:start;gap:12px">
+            <div><strong style="font-size:14px">How do I find my MLBB User ID and Server ID?</strong>
+              <p style="color:var(--muted);font-size:13px;margin-top:6px">Open Mobile Legends, go to your Profile. User ID is shown at the top. Server ID is the number in parentheses next to your name.</p></div>
+            <div style="display:flex;gap:6px;flex-shrink:0">
+              <button class="btn btn-secondary btn-sm">Edit</button>
+              <button class="btn btn-danger btn-sm">Delete</button>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:start;gap:12px">
+            <div><strong style="font-size:14px">Can I get a refund?</strong>
+              <p style="color:var(--muted);font-size:13px;margin-top:6px">Refunds are available for failed orders. Contact support via WhatsApp or ticket system.</p></div>
+            <div style="display:flex;gap:6px;flex-shrink:0">
+              <button class="btn btn-secondary btn-sm">Edit</button>
+              <button class="btn btn-danger btn-sm">Delete</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====== SETTINGS ====== -->
+    <div class="page" id="page-settings">
+      <div class="card">
+        <div class="section-title" style="margin-bottom:18px">Site Settings</div>
+        <div class="form-grid">
+          <div class="form-group"><label>Site Name</label><input value="GEMSTORE" /></div>
+          <div class="form-group"><label>Tagline</label><input value="Fast, Secure & Affordable MLBB Diamond Top-Ups" /></div>
+          <div class="form-group"><label>WhatsApp Support</label><input value="+91 9189002870260" /></div>
+          <div class="form-group"><label>Support Email</label><input value="gemstore25@gmail.com" /></div>
+          <div class="form-group"><label>Referral Bonus (%)</label><input type="number" value="5" /></div>
+          <div class="form-group"><label>Reseller Commission (%)</label><input type="number" value="8" /></div>
+          <div class="form-group"><label>Min Wallet Deposit (₹)</label><input type="number" value="100" /></div>
+          <div class="form-group"><label>Min Wallet Withdrawal (₹)</label><input type="number" value="500" /></div>
+        </div>
+        <div style="margin-top:18px">
+          <button class="btn btn-primary" onclick="showToast('Settings saved!','success')">💾 Save Settings</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====== LOGS ====== -->
+    <div class="page" id="page-logs">
+      <div class="section-header">
+        <div class="section-title">Activity Logs</div>
+        <div class="section-actions">
+          <button class="btn btn-danger btn-sm" onclick="showToast('Old logs cleared','success')">🗑️ Clear Old Logs</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Time</th><th>User</th><th>Action</th><th>Details</th><th>IP</th></tr></thead>
+          <tbody>
+            <tr><td>14 Jun 14:32</td><td>Admin</td><td>Product Updated</td><td>Updated price of 86 Diamonds</td><td>192.168.1.1</td></tr>
+            <tr><td>14 Jun 13:10</td><td>Rahul K.</td><td>Order Placed</td><td>Order #ORD-001 · ₹149</td><td>103.45.12.67</td></tr>
+            <tr><td>14 Jun 11:50</td><td>Admin</td><td>Coupon Created</td><td>WELCOME10 created</td><td>192.168.1.1</td></tr>
+            <tr><td>13 Jun 18:20</td><td>Priya M.</td><td>Wallet Deposit</td><td>₹500 deposit approved</td><td>103.90.45.12</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="admin-footer">
+    © 2026 GEM STORE. All rights reserved. · <a href="https://wa.me/919189002870260" target="_blank">WhatsApp Support</a>
+  </footer>
+</div>
+
+<!-- WHATSAPP FAB -->
+<a class="wa-fab" href="https://wa.me/91918900287026" target="_blank" title="WhatsApp Support">
+  <svg width="28" height="28" viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="16" fill="transparent"/><path d="M16 4C9.373 4 4 9.373 4 16c0 2.385.658 4.617 1.8 6.525L4 28l5.65-1.775A11.94 11.94 0 0016 28c6.627 0 12-5.373 12-12S22.627 4 16 4z" fill="white"/><path d="M21.75 19.15c-.3-.15-1.77-.87-2.04-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.17-.17.2-.35.22-.65.07-.3-.15-1.26-.46-2.4-1.47-.89-.79-1.49-1.77-1.66-2.07-.17-.3-.02-.46.13-.61.13-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.07-.15-.67-1.62-.92-2.22-.24-.58-.49-.5-.67-.51-.17-.01-.37-.01-.57-.01-.2 0-.52.07-.79.37-.27.3-1.04 1.02-1.04 2.49s1.07 2.89 1.22 3.09c.15.2 2.1 3.2 5.08 4.49.71.31 1.26.49 1.69.62.71.23 1.36.2 1.87.12.57-.09 1.77-.72 2.02-1.42.25-.7.25-1.3.17-1.42-.08-.12-.27-.19-.57-.34z" fill="#25d366"/></svg>
+</a>
+<div class="wa-tooltip">💬 Chat with Support on WhatsApp</div>
+
+<!-- PRODUCT MODAL -->
+<div class="modal-overlay" id="product-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="product-modal-title">Add Product — MLBB GLOBAL</div>
+      <button class="modal-close" onclick="closeModal('product-modal')">✕</button>
+    </div>
+    <div class="form-grid" id="product-form">
+      <div class="form-group"><label>Product Name</label><input id="f-name" placeholder="e.g. 86 Diamonds" /></div>
+      <div class="form-group"><label>Diamonds / Label</label><input id="f-diamonds" placeholder="e.g. 86 or Weekly" /></div>
+      <div class="form-group"><label>Type</label>
+        <select id="f-type">
+          <option value="diamonds">💎 Diamonds</option>
+          <option value="weekly_pass">📅 Weekly Diamond Pass</option>
+          <option value="twilight_pass">🌙 Twilight Pass</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Status</label>
+        <select id="f-status"><option value="1">Active</option><option value="0">Inactive</option></select>
+      </div>
+      <div class="form-group"><label>Price (₹)</label><input id="f-price" type="number" placeholder="149" /></div>
+      <div class="form-group"><label>Reseller Price (₹)</label><input id="f-rprice" type="number" placeholder="134" /></div>
+      <div class="form-group"><label>Sort Order</label><input id="f-sort" type="number" placeholder="1" /></div>
+      <div class="form-group"><label>Product Image URL</label><input id="f-img" placeholder="https://..." /></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('product-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveProduct()">💾 Save Product</button>
+    </div>
+  </div>
+</div>
+
+<!-- COUPON MODAL -->
+<div class="modal-overlay" id="coupon-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Create Coupon</div>
+      <button class="modal-close" onclick="closeModal('coupon-modal')">✕</button>
+    </div>
+    <div class="form-grid">
+      <div class="form-group"><label>Coupon Code</label><input placeholder="e.g. SAVE20" /></div>
+      <div class="form-group"><label>Discount Type</label>
+        <select><option>Percentage</option><option>Fixed Amount</option></select>
+      </div>
+      <div class="form-group"><label>Discount Value</label><input type="number" placeholder="10" /></div>
+      <div class="form-group"><label>Min Order Amount (₹)</label><input type="number" placeholder="100" /></div>
+      <div class="form-group"><label>Max Uses</label><input type="number" placeholder="1000" /></div>
+      <div class="form-group"><label>Expires At</label><input type="date" /></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('coupon-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="closeModal('coupon-modal');showToast('Coupon created!','success')">Create Coupon</button>
+    </div>
+  </div>
+</div>
+
+<!-- FAQ MODAL -->
+<div class="modal-overlay" id="faq-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Add FAQ</div>
+      <button class="modal-close" onclick="closeModal('faq-modal')">✕</button>
+    </div>
+    <div class="form-grid">
+      <div class="form-group full"><label>Question</label><input placeholder="Enter the question..." /></div>
+      <div class="form-group full"><label>Answer</label><textarea placeholder="Enter the answer..."></textarea></div>
+      <div class="form-group"><label>Sort Order</label><input type="number" placeholder="1" /></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('faq-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="closeModal('faq-modal');showToast('FAQ added!','success')">Save FAQ</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────
+const packages = [
+  { id:1,  name:'86 Diamonds',          diamonds:'86',      type:'diamonds',      price:149,   rp:134,   active:true,  sort:1  },
+  { id:2,  name:'172 Diamonds',         diamonds:'172',     type:'diamonds',      price:299,   rp:269,   active:true,  sort:2  },
+  { id:3,  name:'257 Diamonds',         diamonds:'257',     type:'diamonds',      price:449,   rp:404,   active:true,  sort:3  },
+  { id:4,  name:'344 Diamonds',         diamonds:'344',     type:'diamonds',      price:599,   rp:539,   active:true,  sort:4  },
+  { id:5,  name:'429 Diamonds',         diamonds:'429',     type:'diamonds',      price:749,   rp:674,   active:true,  sort:5  },
+  { id:6,  name:'514 Diamonds',         diamonds:'514',     type:'diamonds',      price:899,   rp:809,   active:true,  sort:6  },
+  { id:7,  name:'706 Diamonds',         diamonds:'706',     type:'diamonds',      price:1199,  rp:1079,  active:true,  sort:7  },
+  { id:8,  name:'878 Diamonds',         diamonds:'878',     type:'diamonds',      price:1499,  rp:1349,  active:true,  sort:8  },
+  { id:9,  name:'963 Diamonds',         diamonds:'963',     type:'diamonds',      price:1649,  rp:1484,  active:true,  sort:9  },
+  { id:10, name:'1412 Diamonds',        diamonds:'1412',    type:'diamonds',      price:2399,  rp:2159,  active:true,  sort:10 },
+  { id:11, name:'Weekly Diamond Pass',  diamonds:'Weekly',  type:'weekly_pass',   price:159,   rp:143,   active:true,  sort:11 },
+  { id:12, name:'Twilight Pass',        diamonds:'Twilight',type:'twilight_pass', price:499,   rp:449,   active:true,  sort:12 },
+];
+
+let editingId = null;
+let filterType = 'all';
+let searchQ = '';
+
+function typeIcon(t){ return t==='diamonds'?'💎':t==='weekly_pass'?'📅':'🌙'; }
+function typeBadge(t){ return t==='diamonds'?'badge-diamonds':'badge-pass'; }
+function typeName(t){ return t==='diamonds'?'Diamonds':t==='weekly_pass'?'Weekly Pass':'Twilight Pass'; }
+
+// ── NAVIGATION ────────────────────────────────────────────
+function navigate(page, el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  if(el) el.classList.add('active');
+  const titles = {
+    dashboard:'Dashboard', products:'Products — MLBB GLOBAL', packages:'All Packages',
+    orders:'Orders', wallet:'Wallet Requests', users:'All Users', resellers:'Resellers',
+    coupons:'Coupons', banners:'Banners', announcements:'Announcements',
+    tickets:'Support Tickets', faqs:'FAQs', settings:'Settings', logs:'Activity Logs'
+  };
+  document.getElementById('page-title').textContent = titles[page]||page;
+  document.getElementById('page-breadcrumb').textContent = 'Admin / '+(titles[page]||page);
+  if(page==='products') renderProducts();
+  if(page==='packages') renderPackagesTable();
+}
+
+// ── PRODUCTS ─────────────────────────────────────────────
+function renderProducts(){
+  const grid = document.getElementById('products-grid');
+  const list = packages.filter(p=>{
+    const matchType = filterType==='all' || p.type===filterType;
+    const matchQ = !searchQ || p.name.toLowerCase().includes(searchQ.toLowerCase()) || p.diamonds.includes(searchQ);
+    return matchType && matchQ;
+  });
+  if(!list.length){ grid.innerHTML='<div class="empty-state" style="grid-column:1/-1"><div class="icon">🔍</div><p>No products match your filter.</p></div>'; return; }
+  grid.innerHTML = list.map(p=>`
+    <div class="product-card ${p.active?'':'inactive'}" id="pc-${p.id}">
+      <div class="product-badge"><span class="badge ${typeBadge(p.type)}">${typeName(p.type)}</span></div>
+      <div class="product-icon">${typeIcon(p.type)}</div>
+      <div class="product-name">${p.name}</div>
+      <div class="product-diamonds">${p.diamonds} ${p.type==='diamonds'?'Diamonds':''}</div>
+      <div class="product-price">₹${p.price.toLocaleString()}</div>
+      <div class="product-reseller">Reseller: ₹${p.rp.toLocaleString()}</div>
+      <div class="product-actions">
+        <button class="btn btn-secondary btn-sm" onclick="editProduct(${p.id})">✏️ Edit</button>
+        <button class="btn ${p.active?'btn-danger':'btn-success'} btn-sm" onclick="toggleProduct(${p.id})">${p.active?'Disable':'Enable'}</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderPackagesTable(){
+  const tbody = document.getElementById('packages-table-body');
+  tbody.innerHTML = packages.map(p=>`
+    <tr>
+      <td>${p.id}</td>
+      <td><strong>${p.name}</strong></td>
+      <td>${p.diamonds}</td>
+      <td><span class="badge ${typeBadge(p.type)}">${typeName(p.type)}</span></td>
+      <td>₹${p.price.toLocaleString()}</td>
+      <td>₹${p.rp.toLocaleString()}</td>
+      <td><span class="badge ${p.active?'badge-active':'badge-inactive'}">${p.active?'Active':'Inactive'}</span></td>
+      <td>
+        <button class="btn btn-secondary btn-sm" onclick="editProduct(${p.id})">Edit</button>
+        <button class="btn btn-danger btn-sm" onclick="toggleProduct(${p.id})">${p.active?'Disable':'Enable'}</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function filterProducts(type, el){
+  filterType = type;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  if(el) el.classList.add('active');
+  renderProducts();
+}
+
+function searchProducts(q){ searchQ=q; renderProducts(); }
+
+function toggleProduct(id){
+  const p = packages.find(x=>x.id===id);
+  if(!p) return;
+  p.active = !p.active;
+  renderProducts();
+  renderPackagesTable();
+  showToast(`${p.name} ${p.active?'enabled':'disabled'}`, p.active?'success':'error');
+}
+
+// ── MODAL ─────────────────────────────────────────────────
+function openProductModal(){ editingId=null; clearProductForm(); document.getElementById('product-modal-title').textContent='Add Product — MLBB GLOBAL'; openModal('product-modal'); }
+function editProduct(id){
+  const p = packages.find(x=>x.id===id);
+  if(!p) return;
+  editingId = id;
+  document.getElementById('f-name').value = p.name;
+  document.getElementById('f-diamonds').value = p.diamonds;
+  document.getElementById('f-type').value = p.type;
+  document.getElementById('f-status').value = p.active?'1':'0';
+  document.getElementById('f-price').value = p.price;
+  document.getElementById('f-rprice').value = p.rp;
+  document.getElementById('f-sort').value = p.sort;
+  document.getElementById('f-img').value = p.img||'';
+  document.getElementById('product-modal-title').textContent = 'Edit Product — '+p.name;
+  openModal('product-modal');
+}
+function clearProductForm(){
+  ['f-name','f-diamonds','f-price','f-rprice','f-sort','f-img'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('f-type').value='diamonds';
+  document.getElementById('f-status').value='1';
+}
+function saveProduct(){
+  const name=document.getElementById('f-name').value.trim();
+  const diamonds=document.getElementById('f-diamonds').value.trim();
+  const type=document.getElementById('f-type').value;
+  const active=document.getElementById('f-status').value==='1';
+  const price=parseFloat(document.getElementById('f-price').value)||0;
+  const rp=parseFloat(document.getElementById('f-rprice').value)||0;
+  const sort=parseInt(document.getElementById('f-sort').value)||0;
+  const img=document.getElementById('f-img').value.trim();
+  if(!name||!price){ showToast('Please fill required fields','error'); return; }
+  if(editingId){
+    const p=packages.find(x=>x.id===editingId);
+    if(p){ p.name=name;p.diamonds=diamonds;p.type=type;p.active=active;p.price=price;p.rp=rp;p.sort=sort;p.img=img; }
+    showToast('Product updated!','success');
+  } else {
+    const newId=Math.max(...packages.map(x=>x.id))+1;
+    packages.push({id:newId,name,diamonds,type,price,rp,active,sort,img});
+    showToast('Product added!','success');
+  }
+  closeModal('product-modal');
+  renderProducts();
+  renderPackagesTable();
+}
+
+function openCouponModal(){ openModal('coupon-modal'); }
+function openFaqModal(){ openModal('faq-modal'); }
+function openModal(id){ document.getElementById(id).classList.add('open'); }
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+
+document.querySelectorAll('.modal-overlay').forEach(m=>{
+  m.addEventListener('click', e=>{ if(e.target===m) m.classList.remove('open'); });
+});
+
+// ── CHIP TOGGLE ───────────────────────────────────────────
+function toggleChip(el){
+  el.closest('.filter-row').querySelectorAll('.filter-chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// ── TOAST ─────────────────────────────────────────────────
+let toastTimer;
+function showToast(msg, type='success'){
+  const t=document.getElementById('toast');
+  t.textContent = (type==='success'?'✓ ':'✕ ')+msg;
+  t.className='toast show '+(type||'');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('show'),2600);
+}
+
+// ── INIT ─────────────────────────────────────────────────
+renderProducts();
+</script>
+</body>
+</html>

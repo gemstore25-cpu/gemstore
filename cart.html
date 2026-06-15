@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Cart - GEMSTORE</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="brand">GEM<span>STORE</span></a>
+  <div id="nav-auth"></div>
+</nav>
+
+<div class="container">
+  <div class="card">
+    <h1>Your Cart</h1>
+
+    <div class="info-item" style="display:flex; justify-content:space-between; align-items:center; margin-top:16px;">
+      <h3 style="margin:0;">86 Diamonds</h3>
+      <p style="margin:0; font-weight:700; color: var(--primary);">₹149</p>
+    </div>
+
+    <button class="btn" id="checkout-btn" style="margin-top:24px;">Proceed to Payment</button>
+  </div>
+</div>
+
+<script src="js/auth.js"></script>
+<script>
+  document.getElementById("checkout-btn").addEventListener("click", async () => {
+    try {
+      await apiRequest("/auth/me");
+      alert("Checkout flow not implemented yet.");
+    } catch (_) {
+      window.location.href = "login.html";
+    }
+  });
+</script>
+</body>
+</html>

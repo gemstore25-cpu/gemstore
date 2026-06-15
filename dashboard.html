@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dashboard - GEMSTORE</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="brand">GEM<span>STORE</span></a>
+  <div id="nav-auth"></div>
+</nav>
+
+<div class="container">
+  <div class="card">
+    <h2>My Account</h2>
+    <p style="color: var(--text-muted);">Welcome back, <span id="username">...</span>!</p>
+
+    <div class="info-grid">
+      <div class="info-item">
+        <div class="label">Email</div>
+        <div class="value" id="email">-</div>
+      </div>
+      <div class="info-item">
+        <div class="label">Wallet Balance</div>
+        <div class="value wallet-value" id="wallet">-</div>
+      </div>
+      <div class="info-item">
+        <div class="label">Account Type</div>
+        <div class="value" id="role">-</div>
+      </div>
+      <div class="info-item">
+        <div class="label">Referral Code</div>
+        <div class="value" id="referral">-</div>
+      </div>
+      <div class="info-item">
+        <div class="label">MLBB User ID</div>
+        <div class="value" id="mlbb-id">-</div>
+      </div>
+      <div class="info-item">
+        <div class="label">MLBB Server ID</div>
+        <div class="value" id="mlbb-server">-</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="js/auth.js"></script>
+<script>
+  (async () => {
+    try {
+      const { user } = await apiRequest("/auth/me");
+      document.getElementById("username").textContent = user.username;
+      document.getElementById("email").textContent = user.email;
+      document.getElementById("wallet").textContent = `₹${Number(user.wallet_balance).toFixed(2)}`;
+      document.getElementById("role").textContent = user.role;
+      document.getElementById("referral").textContent = user.referral_code;
+      document.getElementById("mlbb-id").textContent = user.mlbb_user_id || "Not set";
+      document.getElementById("mlbb-server").textContent = user.mlbb_server_id || "Not set";
+    } catch (_) {
+      window.location.href = "login.html";
+    }
+  })();
+</script>
+</body>
+</html>
